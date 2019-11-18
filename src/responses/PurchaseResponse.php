@@ -46,12 +46,12 @@ class PurchaseResponse implements RequestResponseInterface
 
     public function isSuccessful(): bool
     {
-        return $this->response->getStatusCode() === 201;
+        return false;
     }
 
     public function isProcessing(): bool
     {
-        return true;
+        return false;
     }
 
     public function getRedirectData(): array

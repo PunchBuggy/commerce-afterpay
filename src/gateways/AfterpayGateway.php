@@ -30,7 +30,7 @@ class AfterpayGateway extends BaseGateway
         'Authorize' => false,
         'Capture' => false,
         'CompleteAuthorize' => false,
-        'CompletePurchase' => true,
+        'CompletePurchase' => false,
         'PaymentSources' => false,
         'Purchase' => true,
         'Refund' => true,
@@ -146,7 +146,7 @@ class AfterpayGateway extends BaseGateway
 
         if($order->billingAddress) {
             $data['billing'] = [
-                'name' => $order->billingAddress->fullName,
+                'name' => $order->billingAddress->firstName.' '.$order->billingAddress->lastName,
                 'line1' => $order->billingAddress->address1,
                 'line2' => $order->billingAddress->address2,
                 'suburb' => $order->billingAddress->city,
@@ -159,7 +159,7 @@ class AfterpayGateway extends BaseGateway
 
         if($order->shippingAddress) {
             $data['shipping'] = [
-                'name' => $order->shippingAddress->fullName,
+                'name' => $order->shippingAddress->firstName.' '.$order->shippingAddress->lastName,
                 'line1' => $order->shippingAddress->address1,
                 'line2' => $order->shippingAddress->address2,
                 'suburb' => $order->shippingAddress->city,
@@ -221,20 +221,24 @@ class AfterpayGateway extends BaseGateway
 
         // Ping Afterpay
         $client = new Client();
-        $tokenResponse = $client->request(
-            'POST',
-            $endpoint,
-            [
-                'auth' => [
-                    $this->merchantId,
-                    $this->merchantKey,
-                ],
-                'headers' => [
-                    'User-Agent' => $this->getUserAgent(),
-                ],
-                'json' => $data,
-            ]
-        );
+        try{
+            $tokenResponse = $client->request(
+                'POST',
+                $endpoint,
+                [
+                    'auth' => [
+                        $this->merchantId,
+                        $this->merchantKey,
+                    ],
+                    'headers' => [
+                        'User-Agent' => $this->getUserAgent(),
+                    ],
+                    'json' => $data,
+                ]
+            );
+        } catch (BadResponseException $exception) {
+            return new GatewayErrorResponse($exception);    
+        }
         return new CompletePurchaseResponse($tokenResponse);
     }
 
