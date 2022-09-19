@@ -23,7 +23,7 @@ class AuthorizationAmountMismatchResponse implements RequestResponseInterface
         return '';
     }
 
-    public function redirect()
+    public function redirect(): void
     {
     }
 
@@ -52,7 +52,7 @@ class AuthorizationAmountMismatchResponse implements RequestResponseInterface
         return '';
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return null;
     }

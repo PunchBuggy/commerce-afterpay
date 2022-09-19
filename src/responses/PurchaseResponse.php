@@ -38,7 +38,7 @@ class PurchaseResponse implements RequestResponseInterface
         return 'POST';
     }
 
-    public function redirect()
+    public function redirect(): void
     {
         $oldMode = Craft::$app->view->getTemplateMode();
         Craft::$app->view->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -78,7 +78,7 @@ class PurchaseResponse implements RequestResponseInterface
         return $this->response->getStatusCode();
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return $this->data;
     }

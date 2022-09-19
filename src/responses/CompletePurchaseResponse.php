@@ -31,7 +31,7 @@ class CompletePurchaseResponse implements RequestResponseInterface
         return '';
     }
 
-    public function redirect()
+    public function redirect(): void
     {
     }
 
@@ -60,7 +60,7 @@ class CompletePurchaseResponse implements RequestResponseInterface
         return $this->response->getStatusCode();
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return $this->data;
     }

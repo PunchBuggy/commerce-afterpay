@@ -55,7 +55,7 @@ class Plugin extends BasePlugin
      *
      * @var string
      */
-    public $schemaVersion = '1.0.0';
+    public string $schemaVersion = '2.2.4';
 
     // Public Methods
     // =========================================================================

@@ -32,7 +32,7 @@ class GatewayErrorResponse implements RequestResponseInterface
         return '';
     }
 
-    public function redirect()
+    public function redirect(): void
     {
     }
 
@@ -61,7 +61,7 @@ class GatewayErrorResponse implements RequestResponseInterface
         return $this->data['errorCode'];
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return $this->data;
     }

@@ -33,7 +33,7 @@ class RefundResponse implements RequestResponseInterface
         return '';
     }
 
-    public function redirect()
+    public function redirect(): void
     {
     }
 
@@ -62,7 +62,7 @@ class RefundResponse implements RequestResponseInterface
         return $this->response->getStatusCode();
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return $this->data;
     }

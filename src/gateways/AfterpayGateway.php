@@ -17,7 +17,6 @@ use craft\helpers\UrlHelper;
 use craft\web\Response as WebResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
-use newism\commerce\afterpay\events\SendRequestEvent;
 use newism\commerce\afterpay\models\forms\PaymentForm;
 use newism\commerce\afterpay\responses\AuthorizationAmountMismatchResponse;
 use newism\commerce\afterpay\responses\CompletePurchaseResponse;
@@ -59,10 +58,6 @@ class AfterpayGateway extends BaseGateway
         ],
     ];
 
-    public const EVENT_BEFORE_SEND_PURCHASE_REQUEST = 'beforeSendPurchaseRequest';
-    public const EVENT_BEFORE_SEND_COMPLETE_PURCHASE_REQUEST = 'beforeSendCompletePurchaseRequest';
-    public const EVENT_BEFORE_SEND_REFUND_REQUEST = 'beforeSendRefundRequest';
-
     public $region = 'AU';
     public $merchantId;
     public $merchantKey;
@@ -75,7 +70,7 @@ class AfterpayGateway extends BaseGateway
         return Craft::t('commerce', 'Afterpay');
     }
 
-    public function getSettingsHtml()
+    public function getSettingsHtml(): ?string
     {
         return Craft::$app->getView()->renderTemplate('newism-commerce-afterpay/gateway/settings.twig.html', ['gateway' => $this]);
     }
@@ -106,7 +101,7 @@ class AfterpayGateway extends BaseGateway
     {
         /** @var Order $order */
         $order = $transaction->getOrder();
-
+        
         $data = [
             'merchant' => [
                 'redirectConfirmUrl' => UrlHelper::actionUrl('commerce/payments/complete-payment', [
@@ -121,7 +116,7 @@ class AfterpayGateway extends BaseGateway
                 'currency' => $order->paymentCurrency,
             ],
             'consumer' => [
-                'phoneNumber' => $order->billingAddress->phone,
+                /*'phoneNumber' => $order->billingAddress->phone,*/
                 'givenNames' => $order->billingAddress->firstName,
                 'surname' => $order->billingAddress->lastName,
                 'email' => $order->email,
@@ -159,26 +154,26 @@ class AfterpayGateway extends BaseGateway
         if ($order->billingAddress) {
             $data['billing'] = [
                 'name' => $order->billingAddress->firstName . ' ' . $order->billingAddress->lastName,
-                'line1' => $order->billingAddress->address1,
-                'line2' => $order->billingAddress->address2,
-                'suburb' => $order->billingAddress->city,
-                'state' => $order->billingAddress->stateText,
-                'postcode' => $order->billingAddress->zipCode,
-                'countryCode' => $order->billingAddress->country->iso,
-                'phoneNumber' => $order->billingAddress->phone,
+                'line1' => $order->billingAddress->addressLine1,
+                'line2' => $order->billingAddress->addressLine2,
+                'suburb' => $order->billingAddress->locality,
+                'state' => $order->billingAddress->administrativeArea,
+                'postcode' => $order->billingAddress->postalCode,
+                'countryCode' => $order->billingAddress->countryCode,
+                /*'phoneNumber' => $order->billingAddress->phone,*/
             ];
         }
 
         if ($order->shippingAddress) {
             $data['shipping'] = [
                 'name' => $order->shippingAddress->firstName . ' ' . $order->shippingAddress->lastName,
-                'line1' => $order->shippingAddress->address1,
-                'line2' => $order->shippingAddress->address2,
-                'suburb' => $order->shippingAddress->city,
-                'state' => $order->shippingAddress->stateText,
-                'postcode' => $order->shippingAddress->zipCode,
-                'countryCode' => $order->shippingAddress->country->iso,
-                'phoneNumber' => $order->shippingAddress->phone,
+                'line1' => $order->shippingAddress->addressLine1,
+                'line2' => $order->shippingAddress->addressLine2,
+                'suburb' => $order->shippingAddress->locality,
+                'state' => $order->shippingAddress->administrativeArea,
+                'postcode' => $order->shippingAddress->postalCode,
+                'countryCode' => $order->shippingAddress->countryCode,
+                /*'phoneNumber' => $order->shippingAddress->phone,*/
             ];
         }
 
@@ -187,12 +182,12 @@ class AfterpayGateway extends BaseGateway
             self::ENDPOINTS[$this->region][$this->sandboxMode ? 'sandbox' : 'production']
         );
 
-        $event = new SendRequestEvent([
-            'transaction' => $transaction,
-            'form' => $form,
-            'method' => 'POST',
-            'endpoint' => $endpoint,
-            'payload' => [
+        // Ping Afterpay
+        $client = new Client();
+        $tokenResponse = $client->request(
+            'POST',
+            $endpoint,
+            [
                 'auth' => [
                     Craft::parseEnv($this->merchantId),
                     Craft::parseEnv($this->merchantKey),
@@ -201,18 +196,7 @@ class AfterpayGateway extends BaseGateway
                     'User-Agent' => $this->getUserAgent(),
                 ],
                 'json' => $data,
-            ],
-        ]);
-
-        // Raise 'beforeSendPurchaseRequest' event
-        $this->trigger(self::EVENT_BEFORE_SEND_PURCHASE_REQUEST, $event);
-
-        // Ping Afterpay
-        $client = new Client();
-        $tokenResponse = $client->request(
-            $event->method,
-            $event->endpoint,
-            $event->payload
+            ]
         );
 
         return new PurchaseResponse(
@@ -251,32 +235,22 @@ class AfterpayGateway extends BaseGateway
             self::ENDPOINTS[$this->region][$this->sandboxMode ? 'sandbox' : 'production']
         );
 
-        $event = new SendRequestEvent([
-            'transaction' => $transaction,
-            'method' => 'POST',
-            'endpoint' => $endpoint,
-            'payload' => [
-                'auth' => [
-                    Craft::parseEnv($this->merchantId),
-                    Craft::parseEnv($this->merchantKey),
-                ],
-                'headers' => [
-                    'User-Agent' => $this->getUserAgent(),
-                ],
-                'json' => $data,
-            ],
-        ]);
-
-        // Raise 'beforeSendCompletePurchaseRequest' event
-        $this->trigger(self::EVENT_BEFORE_SEND_COMPLETE_PURCHASE_REQUEST, $event);
-
         // Ping Afterpay
         $client = new Client();
         try {
             $tokenResponse = $client->request(
-                $event->method,
-                $event->endpoint,
-                $event->payload
+                'POST',
+                $endpoint,
+                [
+                    'auth' => [
+                        Craft::parseEnv($this->merchantId),
+                        Craft::parseEnv($this->merchantKey),
+                    ],
+                    'headers' => [
+                        'User-Agent' => $this->getUserAgent(),
+                    ],
+                    'json' => $data,
+                ]
             );
         } catch (BadResponseException $exception) {
             return new GatewayErrorResponse($exception);
@@ -358,32 +332,22 @@ class AfterpayGateway extends BaseGateway
             $transaction->getParent()->reference
         );
 
-        $event = new SendRequestEvent([
-            'transaction' => $transaction,
-            'method' => 'POST',
-            'endpoint' => $endpoint,
-            'payload' => [
-                'auth' => [
-                    Craft::parseEnv($this->merchantId),
-                    Craft::parseEnv($this->merchantKey),
-                ],
-                'headers' => [
-                    'User-Agent' => $this->getUserAgent(),
-                ],
-                'json' => $data,
-            ],
-        ]);
-
-        // Raise 'beforeSendRefundRequest' event
-        $this->trigger(self::EVENT_BEFORE_SEND_REFUND_REQUEST, $event);
-
         // Ping Afterpay
         $client = new Client();
         try {
             $tokenResponse = $client->request(
-                $event->method,
-                $event->endpoint,
-                $event->payload
+                'POST',
+                $endpoint,
+                [
+                    'auth' => [
+                        Craft::parseEnv($this->merchantId),
+                        Craft::parseEnv($this->merchantKey),
+                    ],
+                    'headers' => [
+                        'User-Agent' => $this->getUserAgent(),
+                    ],
+                    'json' => $data,
+                ]
             );
         } catch (BadResponseException $exception) {
             return new GatewayErrorResponse($exception);
