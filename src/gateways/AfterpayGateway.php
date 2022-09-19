@@ -115,8 +115,7 @@ class AfterpayGateway extends BaseGateway
                 'amount' => (float)$order->totalPrice,
                 'currency' => $order->paymentCurrency,
             ],
-            'consumer' => [
-                /*'phoneNumber' => $order->billingAddress->phone,*/
+            'consumer' => [                
                 'givenNames' => $order->billingAddress->firstName,
                 'surname' => $order->billingAddress->lastName,
                 'email' => $order->email,
@@ -159,8 +158,7 @@ class AfterpayGateway extends BaseGateway
                 'suburb' => $order->billingAddress->locality,
                 'state' => $order->billingAddress->administrativeArea,
                 'postcode' => $order->billingAddress->postalCode,
-                'countryCode' => $order->billingAddress->countryCode,
-                /*'phoneNumber' => $order->billingAddress->phone,*/
+                'countryCode' => $order->billingAddress->countryCode                
             ];
         }
 
@@ -172,8 +170,7 @@ class AfterpayGateway extends BaseGateway
                 'suburb' => $order->shippingAddress->locality,
                 'state' => $order->shippingAddress->administrativeArea,
                 'postcode' => $order->shippingAddress->postalCode,
-                'countryCode' => $order->shippingAddress->countryCode,
-                /*'phoneNumber' => $order->shippingAddress->phone,*/
+                'countryCode' => $order->shippingAddress->countryCode                
             ];
         }
 
